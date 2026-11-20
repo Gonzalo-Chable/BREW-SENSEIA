@@ -1,0 +1,425 @@
+/* ================================================================
+   css/styles.css — BrewSense AI v2 · Café Aroma
+   ================================================================ */
+
+:root {
+    --sidebar-bg:      #4A2E1B;
+    --sidebar-active:  #633B22;
+    --caramel:         #BC804D;
+    --caramel-hover:   #A36B3B;
+    --coffee-dark:     #2C1A10;
+    --coffee-medium:   #8C5836;
+    --bg-cream:        #FAF7F2;
+    --card-bg:         #FFFFFF;
+    --border-soft:     #EFECE6;
+    --text-muted-brew: #6E6A66;
+}
+
+/* ── Reset y base ── */
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background-color: var(--bg-cream);
+    color: var(--coffee-dark);
+    margin: 0;
+    overflow: hidden;
+}
+
+.app-wrapper { height: 100vh; width: 100vw; }
+
+/* ================================================================
+   BARRA LATERAL
+================================================================ */
+.sidebar {
+    width: 255px;
+    min-width: 255px;
+    background-color: var(--sidebar-bg);
+    color: #fff;
+    height: 100vh;
+    user-select: none;
+    flex-shrink: 0;
+}
+
+.brand-icon   { color: var(--caramel); font-size: 1.5rem; }
+.brand-name   { font-size: 1.3rem; font-weight: 800; letter-spacing: -.3px; color: #fff; }
+.brand-ai     { color: var(--caramel); }
+
+.model-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255,255,255,.07);
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 20px;
+    padding: 4px 10px;
+    font-size: .72rem;
+    color: rgba(255,255,255,.65);
+    font-weight: 600;
+}
+.status-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: #4ade80;
+    animation: pulse-dot 2s infinite;
+}
+@keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%       { opacity: .5; transform: scale(.85); }
+}
+
+.sidebar .nav-link {
+    color: rgba(255,255,255,.68);
+    font-weight: 500;
+    font-size: .93rem;
+    padding: .72rem 1rem;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    transition: background .18s, color .18s;
+    text-decoration: none;
+}
+.sidebar .nav-icon   { width: 24px; font-size: 1rem; color: var(--caramel); margin-right: 8px; flex-shrink: 0; }
+.sidebar .nav-link:hover  { background: rgba(255,255,255,.07); color: #fff; }
+.sidebar .nav-link.active { background: var(--sidebar-active); color: #fff; font-weight: 700; }
+
+.sidebar-footer { border-top: 1px solid rgba(255,255,255,.08); }
+.avatar-circle {
+    width: 38px; height: 38px; border-radius: 50%;
+    background: var(--caramel); color: var(--coffee-dark);
+    font-weight: 800; font-size: .85rem;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+}
+.profile-name { font-weight: 700; font-size: .88rem; color: #fff; }
+.profile-role { font-size: .72rem; color: rgba(255,255,255,.55); }
+
+/* ================================================================
+   TOPBAR
+================================================================ */
+.main-panel   { height: 100vh; overflow: hidden; }
+.topbar       { background: #fff; border-bottom: 1px solid var(--border-soft); min-height: 70px; flex-shrink: 0; }
+.page-title   { font-size: 1.45rem; font-weight: 800; color: var(--coffee-dark); letter-spacing: -.4px; }
+
+/* Segmentador Horario */
+.time-segment-group {
+    display: flex;
+    background: var(--bg-cream);
+    border: 1px solid #E6E1DA;
+    border-radius: 10px;
+    padding: 3px;
+    gap: 2px;
+}
+.time-seg-btn {
+    background: none; border: none;
+    border-radius: 8px; padding: 5px 10px;
+    font-size: .78rem; font-weight: 600;
+    color: var(--text-muted-brew);
+    cursor: pointer;
+    display: flex; align-items: center; gap: 5px;
+    transition: background .18s, color .18s;
+    white-space: nowrap;
+}
+.time-seg-btn:hover  { background: rgba(188,128,77,.12); color: var(--caramel); }
+.time-seg-btn.active { background: var(--caramel); color: #fff; box-shadow: 0 1px 4px rgba(188,128,77,.35); }
+.time-seg-btn span   { display: none; }
+@media (min-width: 1200px) { .time-seg-btn span { display: inline; } }
+
+/* Selects del topbar */
+.topbar-select-wrap {
+    display: flex; align-items: center; gap: 7px;
+    background: #FAF8F5; border: 1px solid #E6E1DA; border-radius: 10px;
+    padding: 7px 12px;
+}
+.topbar-select {
+    background: none; border: none; outline: none;
+    font-family: inherit; font-size: .86rem; font-weight: 600;
+    color: var(--coffee-dark); cursor: pointer; padding: 0 16px 0 0;
+    appearance: auto;
+}
+
+/* Botones */
+.btn-caramel {
+    background: var(--caramel); color: #fff; font-weight: 600;
+    border-radius: 10px; border: none;
+    transition: background .2s, transform .12s;
+}
+.btn-caramel:hover  { background: var(--caramel-hover); color: #fff; }
+.btn-caramel:active { transform: scale(.97); }
+
+.btn-coffee {
+    background: var(--sidebar-bg); color: #fff;
+    border-radius: 10px; border: none;
+    transition: background .2s;
+}
+.btn-coffee:hover { background: var(--coffee-dark); color: #fff; }
+
+.btn-outline-coffee {
+    background: none; border: 1.5px solid var(--caramel);
+    color: var(--caramel); border-radius: 8px; font-weight: 600;
+    font-size: .82rem; transition: all .18s;
+}
+.btn-outline-coffee:hover { background: var(--caramel); color: #fff; }
+
+/* ================================================================
+   CONTENIDO
+================================================================ */
+.content-scroll { overflow-y: auto; flex-grow: 1; padding-bottom: 2rem; }
+.view-section   { animation: fadeInView .22s ease-out; }
+
+@keyframes fadeInView {
+    from { opacity: 0; transform: translateY(5px); }
+    to   { opacity: 1; transform: translateY(0);   }
+}
+
+/* ================================================================
+   TARJETAS
+================================================================ */
+.custom-card {
+    background: var(--card-bg);
+    border-radius: 16px;
+    border: 1px solid var(--border-soft);
+    box-shadow: 0 3px 16px rgba(44,26,16,.04);
+    position: relative;
+    overflow: hidden;
+}
+
+/* KPI cards */
+.kpi-card .corner-decor {
+    position: absolute; top: -28px; right: -28px;
+    width: 95px; height: 95px;
+    background: #F5EFEA; border-radius: 50%;
+    pointer-events: none;
+}
+.kpi-icon-box {
+    width: 50px; height: 50px; min-width: 50px;
+    border-radius: 13px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.3rem;
+}
+.bg-soft-blue   { background: #EEF4FF; }
+.bg-soft-green  { background: #EBFBEE; }
+.bg-soft-brown  { background: #F3ECE4; }
+.bg-soft-orange { background: #FFF4E5; }
+
+.text-coffee         { color: var(--sidebar-bg) !important; }
+.text-coffee-medium  { color: var(--coffee-medium); }
+.text-caramel        { color: var(--caramel) !important; }
+.bg-caramel          { background-color: var(--caramel) !important; }
+
+.kpi-label        { font-size: .72rem; font-weight: 700; letter-spacing: .5px; color: var(--text-muted-brew); margin-bottom: 2px; text-transform: uppercase; }
+.kpi-number       { font-size: 1.9rem; font-weight: 800; color: var(--coffee-dark); line-height: 1.1; }
+.kpi-currency     { font-size: .95rem; font-weight: 500; color: #9A948E; }
+.kpi-anchor-title { font-size: 1.25rem; font-weight: 800; color: var(--coffee-dark); line-height: 1.2; }
+.kpi-sub          { font-size: .78rem; }
+.card-heading     { font-size: 1rem; font-weight: 700; color: var(--coffee-dark); }
+.hint-text        { font-size: .7rem; color: #9a948e; display: flex; justify-content: space-between; margin-top: 2px; }
+
+/* ================================================================
+   SLIDER PERSONALIZADO
+================================================================ */
+.brew-range {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%; height: 5px;
+    background: #E6E1DA; border-radius: 10px; outline: none; cursor: pointer;
+}
+.brew-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px; height: 18px; border-radius: 50%;
+    background: var(--caramel); border: 2.5px solid #fff;
+    box-shadow: 0 1px 5px rgba(188,128,77,.5); cursor: pointer;
+    transition: transform .15s;
+}
+.brew-range::-webkit-slider-thumb:hover { transform: scale(1.2); }
+.brew-range::-moz-range-thumb {
+    width: 18px; height: 18px; border-radius: 50%;
+    background: var(--caramel); border: 2.5px solid #fff; cursor: pointer;
+}
+
+/* ================================================================
+   TABLAS
+================================================================ */
+.custom-table thead th {
+    font-size: .7rem; font-weight: 700; color: #7A746E;
+    letter-spacing: .4px; border-bottom: 1px solid #EAE5DF;
+    padding-bottom: 10px; text-transform: uppercase;
+}
+.custom-table tbody td {
+    font-size: .86rem; padding: 11px 8px; border-bottom: 1px solid #F4F1EC;
+}
+.custom-table tbody tr:hover { background: #FDFAF7; }
+
+.basket-tag {
+    display: inline-block;
+    background: #F3ECE4; color: var(--sidebar-bg);
+    font-size: .74rem; font-weight: 600;
+    padding: 2px 8px; border-radius: 6px;
+    margin: 2px 2px 2px 0;
+}
+
+/* Badges */
+.badge-pill-green {
+    background: #DCFCE7; color: #15803D;
+    font-weight: 700; font-size: .76rem;
+    padding: 5px 12px; border-radius: 20px; display: inline-block;
+}
+
+/* ================================================================
+   DROPZONE (INGESTA)
+================================================================ */
+.upload-dropzone {
+    border: 2px dashed #D5C7B8; border-radius: 14px;
+    background: #FCF9F5; cursor: pointer;
+    transition: background .2s, border-color .2s;
+}
+.upload-dropzone:hover, .upload-dropzone.drag-over {
+    background: #F5EFEA; border-color: var(--caramel);
+}
+
+/* ================================================================
+   GRAFO VIS-NETWORK
+================================================================ */
+#rules-network-graph {
+    border: 1px solid var(--border-soft);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+/* ================================================================
+   SEGMENTADOR HORARIO - driver.js override
+================================================================ */
+.driver-popover {
+    font-family: 'Inter', sans-serif !important;
+    border-radius: 14px !important;
+    border: 1.5px solid var(--border-soft) !important;
+    box-shadow: 0 8px 32px rgba(44,26,16,.18) !important;
+}
+.driver-popover-title {
+    font-weight: 800 !important;
+    color: var(--coffee-dark) !important;
+    font-size: 1rem !important;
+}
+.driver-popover-description {
+    color: var(--text-muted-brew) !important;
+    font-size: .88rem !important;
+}
+.driver-popover-progress-btn,
+.driver-popover-next-btn {
+    background: var(--caramel) !important;
+    border: none !important; border-radius: 8px !important;
+}
+.driver-popover-prev-btn {
+    color: var(--caramel) !important;
+}
+
+/* ================================================================
+   PANEL PDF (oculto en UI, visible para html2pdf)
+================================================================ */
+#pdf-export-panel {
+    font-family: 'Inter', sans-serif;
+    padding: 32px 40px;
+    background: #fff;
+    color: #2C1A10;
+}
+.pdf-header-brand h2 {
+    color: #4A2E1B; font-size: 22px; font-weight: 800; margin: 0 0 4px;
+}
+.pdf-header-brand h3 {
+    color: #BC804D; font-size: 16px; font-weight: 600; margin: 0 0 4px;
+}
+.pdf-header-brand p { font-size: 12px; color: #888; margin: 0 0 20px; }
+
+.pdf-table {
+    width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 24px;
+}
+.pdf-table th {
+    background: #4A2E1B; color: #fff;
+    padding: 8px 10px; text-align: left;
+    font-weight: 700; font-size: 11px; text-transform: uppercase;
+}
+.pdf-table td {
+    padding: 8px 10px; border-bottom: 1px solid #EFECE6; vertical-align: middle;
+}
+.pdf-table tr:nth-child(even) td { background: #FAF7F2; }
+
+.pdf-footer { border-top: 1px solid #EFECE6; padding-top: 20px; }
+.pdf-footer p { font-size: 11px; color: #888; margin-bottom: 24px; }
+
+.pdf-sign-row { display: flex; gap: 60px; }
+.pdf-sign-box { flex: 1; text-align: center; }
+.pdf-sign-line { border-bottom: 1.5px solid #2C1A10; margin-bottom: 6px; height: 48px; }
+.pdf-sign-box p { font-size: 11px; color: #666; margin: 0; }
+
+/* ================================================================
+   COMBO TOGGLE — botones Activar / En Carta
+================================================================ */
+.combo-toggle-btn {
+    font-size: .8rem; font-weight: 600;
+    padding: 5px 14px; border-radius: 20px; border: none;
+    cursor: pointer; transition: all .18s; white-space: nowrap;
+}
+.combo-toggle-btn.inactive {
+    background: #F3ECE4; color: var(--coffee-medium);
+}
+.combo-toggle-btn.inactive:hover {
+    background: var(--caramel); color: #fff;
+}
+.combo-toggle-btn.active {
+    background: #DCFCE7; color: #15803D;
+}
+.combo-toggle-btn.active:hover {
+    background: #bbf7d0; color: #166534;
+}
+
+/* Precio tachado / precio combo */
+.price-anchor   { text-decoration: line-through; color: #9A948E; font-size: .88rem; }
+.price-combo-ia { font-weight: 700; color: #15803D; font-size: .95rem; }
+
+/* ================================================================
+   INDICADOR ESTADO API
+================================================================ */
+#cfg-api-status.ok      { background: #DCFCE7; color: #15803D; }
+#cfg-api-status.error   { background: #FEE2E2; color: #991B1B; }
+#cfg-api-status.checking { background: #E0E7FF; color: #3730a3; }
+
+/* ================================================================
+   SPINNER INLINE
+================================================================ */
+.spinner-btn { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,.4); border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; vertical-align: middle; }
+@keyframes spin { to { transform: rotate(360deg); } }
+/* ================================================================
+   ADAPTABILIDAD MÓVIL (RESPONSIVE)
+================================================================ */
+@media (max-width: 768px) {
+    /* 1. Ocultar la barra lateral fuera de la pantalla */
+    .sidebar {
+        position: fixed;
+        left: -255px; /* Esconde el menú a la izquierda */
+        z-index: 1050; /* Lo pone por encima de todo */
+        transition: left 0.3s ease;
+        box-shadow: 4px 0 15px rgba(0,0,0,0.5);
+    }
+    
+    /* Clase que añadiremos con JS para mostrar el menú */
+    .sidebar.show-mobile {
+        left: 0;
+    }
+
+    /* 2. Ajustar el panel principal para que tome el 100% del ancho */
+    .main-panel {
+        width: 100vw;
+    }
+
+    /* 3. Reacomodar los elementos de la cabecera (Topbar) */
+    .topbar {
+        padding: 10px 15px !important;
+    }
+    .page-title {
+        font-size: 1.15rem; /* Título más pequeño en móvil */
+    }
+    .time-segment-group, .topbar-select-wrap {
+        display: none !important; /* Ocultar filtros complejos en móvil para ahorrar espacio */
+    }
+}

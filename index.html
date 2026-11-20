@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BrewSense AI — Café Aroma</title>
+
+    <!-- Bootstrap 5.3 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <!-- Inter (Google Fonts) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Driver.js (Tour Guiado) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.3.1/dist/driver.css">
+    <!-- Estilos propios -->
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div class="app-wrapper d-flex">
+
+    <!-- ══════════════════════════════════════
+         BARRA LATERAL
+    ══════════════════════════════════════ -->
+    <aside class="sidebar d-flex flex-column justify-content-between" id="sidebar">
+        <div>
+            <!-- Logo -->
+            <div class="sidebar-brand d-flex align-items-center px-4 py-4">
+                <i class="fas fa-mug-hot brand-icon me-2"></i>
+                <span class="brand-name">BrewSense <span class="brand-ai">AI</span></span>
+            </div>
+
+            <!-- Versión y estado del modelo -->
+            <div class="px-4 pb-3">
+                <div class="model-status-pill">
+                    <span class="status-dot"></span>
+                    <span>MariaDB :3307 · Activo</span>
+                </div>
+            </div>
+
+            <!-- Navegación -->
+            <ul class="nav flex-column px-3" id="sidebar-nav">
+                <li class="nav-item mb-1">
+                    <a href="#" class="nav-link active" data-view="view-dashboard" data-title="Inteligencia de Ventas" id="nav-dashboard">
+                        <i class="fas fa-chart-pie nav-icon"></i><span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item mb-1">
+                    <a href="#" class="nav-link" data-view="view-ingesta" data-title="Ingesta y Agrupación POS" id="nav-ingesta">
+                        <i class="fas fa-file-csv nav-icon"></i><span>Ingesta de Datos</span>
+                    </a>
+                </li>
+                <li class="nav-item mb-1">
+                    <a href="#" class="nav-link" data-view="view-reglas" data-title="Motor Algorítmico FP-Growth" id="nav-reglas">
+                        <i class="fas fa-brain nav-icon"></i><span>Reglas IA</span>
+                    </a>
+                </li>
+                <li class="nav-item mb-1">
+                    <a href="#" class="nav-link" data-view="view-combos" data-title="Estrategia de Combos y Anclaje" id="nav-combos">
+                        <i class="fas fa-layer-group nav-icon"></i><span>Gestión Combos</span>
+                    </a>
+                </li>
+                <li class="nav-item mb-1">
+                    <a href="#" class="nav-link" data-view="view-config" data-title="Configuración, Usuarios y MariaDB" id="nav-config">
+                        <i class="fas fa-gear nav-icon"></i><span>Configuración</span>
+                    </a>
+                </li>
+                <li class="nav-item mt-2 pt-2 border-top border-light border-opacity-10">
+                    <a href="/pos" class="nav-link text-warning" id="nav-pos-link">
+                        <i class="fas fa-cash-register nav-icon text-warning"></i><span>Abrir Caja POS</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Footer sidebar con usuario real y botón Cerrar Sesión -->
+        <div class="sidebar-footer p-3 mx-2 mb-2">
+            <div class="d-flex align-items-center justify-content-between gap-2">
+                <div class="d-flex align-items-center overflow-hidden">
+                    <div class="avatar-circle me-2" id="sidebar-user-avatar">CA</div>
+                    <div class="text-truncate">
+                        <div class="profile-name text-truncate" id="sidebar-user-name">Café Aroma</div>
+                        <div class="profile-role text-truncate" id="sidebar-user-role">Administrador</div>
+                    </div>
+                </div>
+                <button class="btn btn-sm btn-outline-light border-0 px-2" id="btn-logout" title="Cerrar sesión">
+                    <i class="fas fa-right-from-bracket"></i>
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ══════════════════════════════════════
+         PANEL PRINCIPAL
+    ══════════════════════════════════════ -->
+    <div class="main-panel flex-grow-1 d-flex flex-column">
+
+        <!-- CABECERA SUPERIOR (TOPBAR) -->
+        <header class="topbar d-flex justify-content-between align-items-center px-4 py-2 flex-wrap gap-2">
+            <div class="d-flex align-items-center gap-3">
+                <button class="btn btn-outline-secondary d-md-none border-0 px-2" id="btn-mobile-menu">
+                    <i class="fas fa-bars fs-5"></i>
+                </button>
+                <h1 class="page-title m-0" id="topbar-title">Inteligencia de Ventas</h1>
+            </div>
+
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <!-- GRUPO 1: Controles Exclusivos del Dashboard -->
+                <div id="dashboard-filters" class="d-flex align-items-center gap-2 flex-wrap">
+                    <div class="time-segment-group" id="time-filter-group">
+                        <button class="time-seg-btn active" data-slot="all" title="Todo el día">
+                            <i class="fas fa-clock"></i><span>Todo</span>
+                        </button>
+                        <button class="time-seg-btn" data-slot="morning" title="Mañana 06:00–12:00">
+                            <i class="fas fa-sun"></i><span>Mañana</span>
+                        </button>
+                        <button class="time-seg-btn" data-slot="afternoon" title="Tarde 12:00–18:00">
+                            <i class="fas fa-cloud-sun"></i><span>Tarde</span>
+                        </button>
+                        <button class="time-seg-btn" data-slot="night" title="Noche 18:00–24:00">
+                            <i class="fas fa-moon"></i><span>Noche</span>
+                        </button>
+                    </div>
+
+                    <div class="topbar-select-wrap" id="filter-sucursal">
+                        <i class="fas fa-map-marker-alt text-caramel"></i>
+                        <select id="location-select" class="topbar-select">
+                            <option value="all" selected>Todas las Sucursales</option>
+                            <option value="Quintana Roo">Quintana Roo</option>
+                            <option value="Jalisco">Jalisco</option>
+                            <option value="Nuevo León">Nuevo León</option>
+                        </select>
+                    </div>
+
+                    <div class="topbar-select-wrap" id="filter-periodo">
+                        <i class="far fa-calendar text-muted"></i>
+                        <select id="period-select" class="topbar-select">
+                            <option value="30d">Últimos 30 días</option>
+                            <option value="90d">Último trimestre</option>
+                            <option value="365d" selected>Histórico anual</option>
+                        </select>
+                    </div>
+
+                    <button class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1 px-2" id="btn-sync-live" title="Sincronizar ventas recientes desde MariaDB">
+                        <i class="fas fa-rotate"></i>
+                    </button>
+
+                    <button class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1 px-3" id="btn-tour" title="Iniciar tour guiado">
+                        <i class="fas fa-route"></i><span class="d-none d-md-inline">Tour Guiado</span>
+                    </button>
+                </div>
+
+                <!-- GRUPO 2: Botón Upload Exclusivo de Ingesta -->
+                <button class="btn btn-caramel d-none align-items-center gap-2 px-3 py-2" id="btn-top-upload">
+                    <i class="fas fa-cloud-arrow-up"></i>
+                    <span>Subir CSV POS</span>
+                </button>
+                <input type="file" id="csvFileInput" accept=".csv" class="d-none">
+            </div>
+        </header>
+
+        <!-- TOAST GLOBAL -->
+        <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index:9999">
+            <div id="brew-toast" class="toast align-items-center border-0" role="alert">
+                <div class="d-flex">
+                    <div class="toast-body fw-semibold" id="brew-toast-msg">Operación completada.</div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ÁREA DINÁMICA DE VISTAS -->
+        <main class="content-scroll p-4">
+
+            <!-- ══════════════════════════════
+                 VISTA 1: DASHBOARD
+            ══════════════════════════════ -->
+            <section id="view-dashboard" class="view-section">
+                <!-- KPI Cards -->
+                <div class="row g-3 mb-4">
+                    <div class="col-sm-6 col-xl-3">
+                        <div class="custom-card kpi-card p-4 h-100" id="kpi-card-tickets">
+                            <div class="corner-decor"></div>
+                            <div class="kpi-icon-box bg-soft-blue text-primary mb-3">
+                                <i class="fas fa-receipt"></i>
+                            </div>
+                            <div class="kpi-label">TICKETS ANALIZADOS</div>
+                            <div class="kpi-number" id="kpi-tickets">—</div>
+                            <div class="kpi-sub mt-1" id="kpi-tickets-sub">
+                                <span class="text-muted">Consultando MariaDB...</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6 col-xl-3">
+                        <div class="custom-card kpi-card p-4 h-100" id="kpi-card-avg">
+                            <div class="corner-decor"></div>
+                            <div class="kpi-icon-box bg-soft-green text-success mb-3">
+                                <i class="fas fa-sack-dollar"></i>
+                            </div>
+                            <div class="kpi-label">TICKET PROMEDIO</div>
+                            <div class="kpi-number" id="kpi-ticket-avg">$0.00 <span class="kpi-currency">MXN</span></div>
+                            <div class="kpi-sub text-muted mt-1" id="kpi-ticket-meta">
+                                Meta: <strong class="text-dark">$0.00 MXN</strong>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6 col-xl-3">
+                        <div class="custom-card kpi-card p-4 h-100" id="kpi-card-anchor">
+                            <div class="corner-decor"></div>
+                            <div class="kpi-icon-box bg-soft-brown text-coffee mb-3">
+                                <i class="fas fa-anchor"></i>
+                            </div>
+                            <div class="kpi-label">PRODUCTO ANCLA TOP</div>
+                            <div class="kpi-anchor-title" id="kpi-anchor-name">—</div>
+                            <div class="kpi-sub text-coffee-medium fw-medium mt-1" id="kpi-anchor-sub">
+                                <i class="fas fa-link small"></i> —
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6 col-xl-3">
+                        <div class="custom-card kpi-card p-4 h-100" id="kpi-card-combos">
+                            <div class="corner-decor"></div>
+                            <div class="kpi-icon-box bg-soft-orange text-warning mb-3">
+                                <i class="fas fa-tags"></i>
+                            </div>
+                            <div class="kpi-label">COMBOS ACTIVOS / ADOPCIÓN POS</div>
+                            <div class="kpi-number" id="kpi-combos-activos">0</div>
+                            <div class="kpi-sub mt-1" id="kpi-adopcion-sub">
+                                <span class="text-muted">Adopción POS: </span>
+                                <strong class="text-success" id="kpi-tasa-adopcion">0%</strong>
+                                <span class="text-muted"> · Extra: </span>
+                                <strong class="text-coffee" id="kpi-ingreso-ia">$0.00</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gráficas -->
+                <div class="row g-3 mb-4">
+                    <div class="col-lg-8">
+                        <div class="custom-card p-4 h-100">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div>
+                                    <h5 class="card-heading mb-1">Top Patrones de Co-Compra (Lift)</h5>
+                                    <p class="text-muted small m-0">Reglas validadas en MariaDB ordenadas por fuerza de asociación.</p>
+                                </div>
+                                <span class="badge bg-soft-brown text-coffee small" id="chart-filter-badge">Umbral ≥ 1.2</span>
+                            </div>
+                            <div style="height: 270px; position:relative">
+                                <canvas id="liftBarChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="custom-card p-4 h-100">
+                            <h5 class="card-heading mb-1">Ingresos por Categoría (Real)</h5>
+                            <p class="text-muted small mb-3">Distribución calculada directo desde MariaDB.</p>
+                            <div style="height: 220px; position:relative">
+                                <canvas id="salesDoughnutChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Parámetros IA + Tabla Recomendaciones -->
+                <div class="row g-3">
+                    <div class="col-lg-4">
+                        <div class="custom-card p-4 h-100 d-flex flex-column justify-content-between">
+                            <div>
+                                <h5 class="card-heading mb-1">Parámetros FP-Growth</h5>
+                                <p class="text-muted small mb-4">Reentrena el algoritmo sobre MariaDB y guarda el resultado en el historial.</p>
+
+                                <div class="mb-4">
+                                    <div class="d-flex justify-content-between small fw-semibold mb-1">
+                                        <span>Soporte Mínimo</span>
+                                        <span class="text-caramel fw-bold" id="lbl-dash-supp">1.0%</span>
+                                    </div>
+                                    <input type="range" class="form-range brew-range" id="slider-dash-supp" min="0.5" max="15" step="0.5" value="1">
+                                    <div class="d-flex justify-content-between hint-text">
+                                        <span>0.5% (amplio)</span><span>15% (estricto)</span>
+                                    </div>
+                                </div>
+
+                                <div class="mb-4">
+                                    <div class="d-flex justify-content-between small fw-semibold mb-1">
+                                        <span>Confianza Mínima</span>
+                                        <span class="text-caramel fw-bold" id="lbl-dash-conf">55%</span>
+                                    </div>
+                                    <input type="range" class="form-range brew-range" id="slider-dash-conf" min="10" max="85" step="5" value="55">
+                                    <div class="d-flex justify-content-between hint-text">
+                                        <span>10%</span><span>85%</span>
+                                    </div>
+                                </div>
+
+                                <div class="mb-4">
+                                    <div class="d-flex justify-content-between small fw-semibold mb-1">
+                                        <span>Umbral Lift Mínimo</span>
+                                        <span class="text-caramel fw-bold" id="lbl-dash-lift">1.2</span>
+                                    </div>
+                                    <input type="range" class="form-range brew-range" id="slider-dash-lift" min="1.0" max="5.0" step="0.1" value="1.2">
+                                    <div class="d-flex justify-content-between hint-text">
+                                        <span>1.0 (base)</span><span>5.0 (muy fuerte)</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <button class="btn btn-coffee w-100 py-2 fw-semibold" id="btn-apply-params">
+                                <i class="fas fa-sliders me-2"></i>Reentrenar Modelo en MariaDB
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-8">
+                        <div class="custom-card p-4 h-100">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div>
+                                    <h5 class="card-heading mb-1">Recomendaciones de Combos IA</h5>
+                                    <p class="text-muted small m-0">Convierte reglas en combos activos visibles al instante en la Caja POS.</p>
+                                </div>
+                                <span class="badge-pill-green" id="badge-new-combos">0 Reglas</span>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table custom-table align-middle m-0">
+                                    <thead>
+                                        <tr>
+                                            <th>ANCLA</th>
+                                            <th>COMPLEMENTO</th>
+                                            <th>CONFIANZA</th>
+                                            <th>LIFT</th>
+                                            <th>COMBO SUGERIDO</th>
+                                            <th class="text-end">ACCIÓN (BD)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="dashboard-combos-tbody">
+                                        <tr><td colspan="6" class="text-center text-muted py-4 small">Cargando reglas desde MariaDB...</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ══════════════════════════════
+                 VISTA 2: INGESTA DE DATOS
+            ══════════════════════════════ -->
+            <section id="view-ingesta" class="view-section d-none">
+                <div class="row g-3 mb-3">
+                    <div class="col-lg-5">
+                        <div class="custom-card p-4 h-100">
+                            <h5 class="card-heading mb-1">Carga del Dataset POS a MariaDB</h5>
+                            <p class="text-muted small mb-4">Sube un archivo <code>.csv</code> del Punto de Venta. Flask depura nulos, actualiza el catálogo e inserta los tickets en MariaDB.</p>
+
+                            <div class="upload-dropzone p-5 text-center mb-4" id="dropzone-area">
+                                <i class="fas fa-file-csv fa-3x text-caramel mb-3 d-block"></i>
+                                <p class="fw-semibold text-coffee mb-1">Arrastra tu archivo .csv aquí</p>
+                                <p class="small text-muted mb-3">o haz clic para seleccionar desde tu equipo</p>
+                                <button class="btn btn-caramel px-4" id="btn-process-etl">
+                                    <i class="fas fa-database me-2"></i>Importar CSV a MariaDB
+                                </button>
+                            </div>
+
+                            <div class="p-3 rounded-3 bg-soft-brown" id="etl-status-box">
+                                <div class="d-flex justify-content-between small fw-semibold mb-1">
+                                    <span id="etl-step-text">Sincronizado con MariaDB</span>
+                                    <span id="etl-percent-text" class="text-coffee">100%</span>
+                                </div>
+                                <div class="progress" style="height: 8px;">
+                                    <div class="progress-bar bg-caramel" id="etl-progress-bar" style="width: 100%; transition: width 0.5s ease;"></div>
+                                </div>
+                                <div class="row text-center mt-3 pt-2 border-top border-secondary-subtle small">
+                                    <div class="col-4">
+                                        <div class="text-muted">Líneas Detalle</div>
+                                        <div class="fw-bold text-dark" id="etl-raw-rows">—</div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="text-muted">Nulos Depurados</div>
+                                        <div class="fw-bold text-success" id="etl-nulls">—</div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="text-muted">Canastas Únicas</div>
+                                        <div class="fw-bold text-coffee" id="etl-baskets">—</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-7">
+                        <div class="custom-card p-4 h-100">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div>
+                                    <h5 class="card-heading mb-1">Últimas Canastas Agrupadas en MariaDB</h5>
+                                    <p class="text-muted small m-0">Incluye tanto registros importados por CSV como ventas nuevas de la Caja POS.</p>
+                                </div>
+                                <span class="badge bg-soft-green text-success">1 Ticket = 1 Canasta</span>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table custom-table align-middle m-0">
+                                    <thead>
+                                        <tr>
+                                            <th>ID_TICKET</th>
+                                            <th>FECHA / SUCURSAL</th>
+                                            <th>ARTÍCULOS AGRUPADOS</th>
+                                            <th class="text-end">TOTAL</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="etl-preview-tbody">
+                                        <tr><td colspan="4" class="text-center text-muted py-4 small">Cargando canastas desde MariaDB...</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ══════════════════════════════
+                 VISTA 3: REGLAS IA
+            ══════════════════════════════ -->
+            <section id="view-reglas" class="view-section d-none">
+                <div class="row g-3 mb-3">
+                    <!-- Grafo Vis-Network -->
+                    <div class="col-lg-7">
+                        <div class="custom-card p-4 h-100">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <h5 class="card-heading mb-1">Grafo Interactivo de Co-Compra</h5>
+                                    <p class="text-muted small m-0">Haz clic en cualquier producto del grafo para filtrar la tabla de reglas inferior.</p>
+                                </div>
+                                <span class="badge bg-soft-brown text-coffee small">vis-network</span>
+                            </div>
+                            <div id="rules-network-graph" style="height: 360px; border-radius:10px; background:#fcf9f5;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Scatter + Historial de Entrenamientos -->
+                    <div class="col-lg-5">
+                        <div class="custom-card p-4 h-100 d-flex flex-column justify-content-between">
+                            <div>
+                                <h5 class="card-heading mb-1">Mapa Soporte × Confianza</h5>
+                                <p class="text-muted small mb-2">Distribución de reglas extraídas por FP-Growth.</p>
+                                <div style="height: 185px; position:relative">
+                                    <canvas id="scatterRulesChart"></canvas>
+                                </div>
+                            </div>
+                            <div class="p-3 rounded-3 bg-soft-brown mt-3 small">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span class="text-muted">Reglas mostradas:</span>
+                                    <strong class="text-dark" id="meta-rules-count">—</strong>
+                                </div>
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span class="text-muted">Último tiempo de cómputo:</span>
+                                    <strong class="text-success" id="meta-train-ms">—</strong>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span class="text-muted">Último entrenamiento:</span>
+                                    <strong class="text-dark" id="meta-train-time">—</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Matriz completa con curación (Aprobar / Bloquear / Crear Combo) -->
+                <div class="custom-card p-4 mb-3">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+                        <div>
+                            <h5 class="card-heading mb-1">Curación de Reglas de Asociación</h5>
+                            <p class="text-muted small m-0">Aprueba reglas para crear combos comerciales o bloquéalas para que no se sugieran en caja.</p>
+                        </div>
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <div class="form-check form-switch small me-2">
+                                <input class="form-check-input" type="checkbox" id="chk-show-blocked">
+                                <label class="form-check-label text-muted" for="chk-show-blocked">Ver bloqueadas</label>
+                            </div>
+                            <input type="text" id="search-rule-input" class="form-control form-control-sm w-auto" placeholder="Buscar producto…">
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table custom-table align-middle m-0">
+                            <thead>
+                                <tr>
+                                    <th>ANCLA</th>
+                                    <th>COMPLEMENTO</th>
+                                    <th>SOPORTE</th>
+                                    <th>CONFIANZA</th>
+                                    <th>LIFT</th>
+                                    <th>ESTADO</th>
+                                    <th class="text-end">ACCIONES</th>
+                                </tr>
+                            </thead>
+                            <tbody id="rules-full-tbody">
+                                <tr><td colspan="7" class="text-center text-muted py-4 small">Cargando matriz de reglas...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Historial de Entrenamientos -->
+                <div class="custom-card p-4">
+                    <h5 class="card-heading mb-1">Historial de Entrenamientos FP-Growth</h5>
+                    <p class="text-muted small mb-3">Auditoría de ejecuciones registradas en la tabla <code>entrenamientos_ia</code>.</p>
+                    <div class="table-responsive">
+                        <table class="table custom-table align-middle m-0 small">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>FECHA</th>
+                                    <th>FILTRO (SUCURSAL / TURNO)</th>
+                                    <th>PARÁMETROS (SOP / CONF / LIFT)</th>
+                                    <th>TIEMPO</th>
+                                    <th>REGLAS ÚTILES / PODADAS</th>
+                                </tr>
+                            </thead>
+                            <tbody id="train-history-tbody">
+                                <tr><td colspan="6" class="text-center text-muted py-3">Sin registros de entrenamiento todavía.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ══════════════════════════════
+                 VISTA 4: GESTIÓN COMBOS (CRUD REAL)
+            ══════════════════════════════ -->
+            <section id="view-combos" class="view-section d-none">
+                <div class="row g-3 mb-3">
+                    <!-- Simulador financiero -->
+                    <div class="col-lg-4">
+                        <div class="custom-card p-4 h-100">
+                            <h5 class="card-heading mb-1">Simulador de Anclaje de Precios</h5>
+                            <p class="text-muted small mb-3">Proyección basada en los combos activos guardados en MariaDB.</p>
+
+                            <div class="p-4 rounded-3 bg-soft-green mb-3 text-center">
+                                <div class="small text-muted fw-semibold text-uppercase mb-1">Ticket Promedio Proyectado</div>
+                                <div class="display-5 fw-bold text-success" id="sim-projected-ticket">$0.00</div>
+                                <div class="small text-muted">MXN por transacción</div>
+                                <div class="small text-success fw-semibold mt-2" id="sim-ticket-diff">+$0.00 (+0.0%) sobre base</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between small fw-semibold mb-1">
+                                    <span>Tasa de Conversión Estimada</span>
+                                    <span class="text-caramel fw-bold" id="lbl-sim-conv">35%</span>
+                                </div>
+                                <input type="range" class="form-range brew-range" id="slider-sim-conv" min="10" max="65" step="5" value="35">
+                                <div class="d-flex justify-content-between hint-text">
+                                    <span>10% (conservador)</span><span>65% (optimista)</span>
+                                </div>
+                            </div>
+
+                            <div class="p-3 rounded-3 border small mb-3">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-muted">Ticket base real:</span>
+                                    <strong id="sim-base-ticket">$0.00 MXN</strong>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-muted">Combos activos en POS:</span>
+                                    <strong class="text-coffee" id="active-combos-count">0</strong>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span class="text-muted">Margen promedio combos:</span>
+                                    <strong class="text-success" id="sim-avg-margin">0%</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CRUD de combos en MariaDB -->
+                    <div class="col-lg-8">
+                        <div class="custom-card p-4 h-100">
+                            <div class="d-flex justify-content-between align-items-start mb-3 flex-wrap gap-2">
+                                <div>
+                                    <h5 class="card-heading mb-1">Catálogo de Combos — Gestión Real (MariaDB)</h5>
+                                    <p class="text-muted small m-0">Crea, edita, pausa o elimina combos. Todo cambio se sincroniza al instante con la Caja POS.</p>
+                                </div>
+                                <div class="d-flex gap-2 flex-wrap align-items-center">
+                                    <span class="badge-pill-green" id="active-combos-badge">0 Activos</span>
+                                    <button class="btn btn-sm btn-caramel" id="btn-open-new-combo">
+                                        <i class="fas fa-plus me-1"></i>Nuevo Combo
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-coffee" id="btn-export-pdf">
+                                        <i class="fas fa-file-pdf me-1"></i>Dictamen PDF
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table custom-table align-middle m-0" id="combo-simulator-table">
+                                    <thead>
+                                        <tr>
+                                            <th>COMBO / VIGENCIA</th>
+                                            <th>PRECIOS (ANCLA → COMBO)</th>
+                                            <th>MARGEN</th>
+                                            <th>CONVERSIÓN POS</th>
+                                            <th class="text-end">GESTIÓN</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="combo-simulator-tbody">
+                                        <tr><td colspan="5" class="text-center text-muted py-4 small">Cargando combos desde MariaDB...</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Panel PDF exportable (oculto, solo para html2pdf) -->
+                <div id="pdf-export-panel" class="d-none">
+                    <div class="pdf-header-brand">
+                        <h2>BrewSense AI — Café Aroma</h2>
+                        <h3>Dictamen Ejecutivo de Combos Aprobados</h3>
+                        <p id="pdf-fecha-gen"></p>
+                    </div>
+                    <table class="pdf-table" id="pdf-combos-table">
+                        <thead>
+                            <tr>
+                                <th>Combo Estratégico</th>
+                                <th>Vigencia</th>
+                                <th>Precio Ancla</th>
+                                <th>Precio Combo IA</th>
+                                <th>Descuento</th>
+                                <th>Margen</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pdf-combos-tbody"></tbody>
+                    </table>
+                    <div class="pdf-footer">
+                        <p>Transparencia Algorítmica: Combos validados con FP-Growth y control de rentabilidad en MariaDB.</p>
+                        <div class="pdf-sign-row">
+                            <div class="pdf-sign-box"><div class="pdf-sign-line"></div><p>Firma Gerente Comercial</p></div>
+                            <div class="pdf-sign-box"><div class="pdf-sign-line"></div><p>Firma Data Scientist</p></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ══════════════════════════════
+                 VISTA 5: CONFIGURACIÓN Y USUARIOS
+            ══════════════════════════════ -->
+            <section id="view-config" class="view-section d-none">
+                <div class="row g-3 mb-3">
+                    <div class="col-lg-6">
+                        <div class="custom-card p-4 h-100">
+                            <h5 class="card-heading mb-2">Seguridad y Conexión MariaDB</h5>
+                            <p class="text-muted small mb-4">Base de datos local relacional con autenticación de roles y respaldo SQL directo.</p>
+
+                            <div class="list-group list-group-flush small mb-4">
+                                <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                    <span><i class="fas fa-server text-coffee me-2"></i>Host BD Relacional</span>
+                                    <code>127.0.0.1:3307 (MariaDB 13.0.2)</code>
+                                </div>
+                                <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                    <span><i class="fas fa-shield-halved text-success me-2"></i>Anonimización PII</span>
+                                    <span class="badge bg-soft-green text-success">Activa · Solo ID_Ticket</span>
+                                </div>
+                                <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                    <span><i class="fas fa-plug text-primary me-2"></i>Estado del Backend</span>
+                                    <span id="cfg-api-status" class="badge bg-secondary">Verificando…</span>
+                                </div>
+                                <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                    <span><i class="fas fa-clock-rotate-left text-primary me-2"></i>Último Respaldo</span>
+                                    <span id="last-backup-time" class="fw-semibold">—</span>
+                                </div>
+                            </div>
+
+                            <button class="btn btn-caramel w-100 py-2" id="btn-backup-db">
+                                <i class="fas fa-download me-2"></i>Generar Respaldo SQL Ahora
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-6">
+                        <div class="custom-card p-4 h-100">
+                            <h5 class="card-heading mb-2">Responsables CRISP-DM</h5>
+                            <p class="text-muted small mb-3">Trazabilidad técnica de los paquetes de trabajo de la EDT.</p>
+                            <div class="table-responsive">
+                                <table class="table custom-table align-middle m-0 small">
+                                    <thead>
+                                        <tr>
+                                            <th>FASE / MÓDULO</th>
+                                            <th>RESPONSABLE</th>
+                                            <th class="text-end">ESTADO</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr><td><strong>1.1 Extracción CSV POS</strong></td><td>Edwin Cruz</td><td class="text-end"><span class="badge bg-soft-green text-success">Verificado</span></td></tr>
+                                        <tr><td><strong>1.2 Normalización MariaDB</strong></td><td>Rey Lopez</td><td class="text-end"><span class="badge bg-soft-green text-success">Verificado</span></td></tr>
+                                        <tr><td><strong>1.3 Agrupación Pandas ETL</strong></td><td>Uzias Perez</td><td class="text-end"><span class="badge bg-soft-green text-success">Verificado</span></td></tr>
+                                        <tr><td><strong>1.4 Modelo IA FP-Growth</strong></td><td>Rusel Tec</td><td class="text-end"><span class="badge bg-soft-green text-success">Verificado</span></td></tr>
+                                        <tr><td><strong>1.5 Estrategia de Combos</strong></td><td>Gonzalo Chable</td><td class="text-end"><span class="badge bg-soft-green text-success">Operativo</span></td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- GESTIÓN DE EMPLEADOS Y PRIVILEGIOS -->
+                <div class="custom-card p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                        <div>
+                            <h5 class="card-heading mb-1">Gestión de Usuarios y Privilegios (Admin / Empleado)</h5>
+                            <p class="text-muted small m-0">Crea cuentas para cajeros de cada sucursal o desactiva accesos al instante.</p>
+                        </div>
+                        <button class="btn btn-sm btn-caramel" id="btn-open-new-user">
+                            <i class="fas fa-user-plus me-1"></i>Nuevo Usuario
+                        </button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table custom-table align-middle m-0 small">
+                            <thead>
+                                <tr>
+                                    <th>NOMBRE</th>
+                                    <th>CORREO</th>
+                                    <th>ROL</th>
+                                    <th>SUCURSAL ASIGNADA</th>
+                                    <th>ESTADO</th>
+                                    <th class="text-end">ACCIÓN</th>
+                                </tr>
+                            </thead>
+                            <tbody id="users-tbody">
+                                <tr><td colspan="6" class="text-center text-muted py-3">Cargando usuarios...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     MODAL 1: CREAR / EDITAR COMBO (CON CONTROL DE MARGEN)
+══════════════════════════════════════ -->
+<div class="modal fade" id="comboModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0" style="border-radius:16px;">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold text-coffee" id="comboModalTitle">Nuevo Combo Estratégico</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="combo-form">
+                <div class="modal-body">
+                    <input type="hidden" id="cmb-id">
+                    <input type="hidden" id="cmb-regla-id">
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Nombre comercial del Combo</label>
+                        <input type="text" id="cmb-nombre" class="form-control" placeholder="Ej. Dúo Mañanero Café Aroma" required>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold">Producto Ancla</label>
+                            <select id="cmb-ancla" class="form-select form-select-sm" required></select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold">Producto Complemento</label>
+                            <select id="cmb-comp" class="form-select form-select-sm" required></select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between small fw-semibold mb-1">
+                            <span>Descuento del Combo</span>
+                            <span class="text-caramel fw-bold" id="cmb-desc-lbl">10%</span>
+                        </div>
+                        <input type="range" id="cmb-desc" class="form-range brew-range" min="2" max="40" step="1" value="10">
+                    </div>
+
+                    <div class="p-3 rounded-3 bg-soft-brown small mb-3" id="cmb-margin-preview">
+                        <div class="d-flex justify-content-between"><span>Precio separado (Ancla):</span><strong id="prev-sep">$0.00</strong></div>
+                        <div class="d-flex justify-content-between"><span>Precio Combo final:</span><strong class="text-success" id="prev-combo">$0.00</strong></div>
+                        <div class="d-flex justify-content-between"><span>Costo estimado / Margen:</span><strong id="prev-margen">0%</strong></div>
+                    </div>
+
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold">Sucursal</label>
+                            <select id="cmb-sucursal" class="form-select form-select-sm">
+                                <option value="all">Todas las sucursales</option>
+                                <option value="Quintana Roo">Quintana Roo</option>
+                                <option value="Jalisco">Jalisco</option>
+                                <option value="Nuevo León">Nuevo León</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold">Turno vigente</label>
+                            <select id="cmb-turno" class="form-select form-select-sm">
+                                <option value="all">Todo el día</option>
+                                <option value="morning">Mañana</option>
+                                <option value="afternoon">Tarde</option>
+                                <option value="night">Noche</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-sm btn-caramel px-4" id="btn-save-combo">Guardar en MariaDB</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     MODAL 2: HABLADOR DE CAJA (EFECTO ANCLAJE)
+══════════════════════════════════════ -->
+<div class="modal fade" id="habladorModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0" style="border-radius:18px; overflow:hidden;">
+            <div class="p-4 text-center text-white" style="background: linear-gradient(135deg, #2C1A10 0%, #4A2E1B 100%);">
+                <div class="small text-uppercase tracking-wide opacity-75 mb-1">Café Aroma · Promoción Recomendada</div>
+                <h3 class="fw-bold mb-2" style="color:#BC804D;" id="hab-titulo">Combo Especial</h3>
+                <p class="mb-3 fs-5 fw-semibold" id="hab-productos">Producto A + Producto B</p>
+                <div class="bg-white text-dark rounded-4 p-3 mx-auto" style="max-width:300px;">
+                    <div class="small text-muted">Precio por separado</div>
+                    <div class="fs-5 text-decoration-line-through text-muted" id="hab-regular">$0.00 MXN</div>
+                    <div class="small fw-bold text-uppercase mt-2" style="color:#BC804D;">Llévatelo en Combo por</div>
+                    <div class="display-5 fw-bold text-success" id="hab-combo">$0.00</div>
+                    <span class="badge bg-warning text-dark mt-1" id="hab-ahorro">Ahorras $0.00 MXN</span>
+                </div>
+                <div class="small opacity-75 mt-3" id="hab-vigencia">Válido en todas las sucursales</div>
+            </div>
+            <div class="modal-footer justify-content-between bg-light">
+                <button class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button class="btn btn-sm btn-caramel" onclick="window.print()"><i class="fas fa-print me-1"></i>Imprimir Hablador</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     MODAL 3: NUEVO USUARIO (ADMIN / EMPLEADO)
+══════════════════════════════════════ -->
+<div class="modal fade" id="userModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0" style="border-radius:16px;">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold text-coffee">Crear Cuenta de Acceso</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="user-form">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Nombre completo</label>
+                        <input type="text" id="usr-nombre" class="form-control" placeholder="Ej. Barista Jalisco" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Correo de acceso</label>
+                        <input type="email" id="usr-email" class="form-control" placeholder="caja2@cafearoma.mx" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Contraseña (mín. 6 caracteres)</label>
+                        <input type="password" id="usr-password" class="form-control" minlength="6" required>
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold">Rol</label>
+                            <select id="usr-rol" class="form-select form-select-sm">
+                                <option value="empleado">Empleado (Solo Caja POS)</option>
+                                <option value="admin">Administrador (Control Total)</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold">Sucursal</label>
+                            <select id="usr-sucursal" class="form-select form-select-sm">
+                                <option value="Quintana Roo">Quintana Roo</option>
+                                <option value="Jalisco">Jalisco</option>
+                                <option value="Nuevo León">Nuevo León</option>
+                                <option value="all">Todas (Solo Admin)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-sm btn-caramel px-4">Crear Usuario</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- SCRIPTS CDN -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/vis-network@9.1.9/standalone/umd/vis-network.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/driver.js@1.3.1/dist/driver.umd.js"></script>
+<script src="js/scripts.js"></script>
+</body>
+</html>

@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar Sesión — BrewSense AI</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #2C1A10 0%, #4A2E1B 55%, #633B22 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        .login-card {
+            background: #FAF7F2;
+            border-radius: 20px;
+            max-width: 430px;
+            width: 100%;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+            overflow: hidden;
+        }
+        .login-header {
+            background: #4A2E1B;
+            color: #fff;
+            padding: 2rem 2rem 1.5rem;
+            text-align: center;
+        }
+        .brand-ai { color: #BC804D; }
+        .btn-caramel {
+            background: #BC804D;
+            color: #fff;
+            font-weight: 700;
+            border: none;
+            border-radius: 10px;
+            padding: 0.7rem;
+        }
+        .btn-caramel:hover { background: #A36B3B; color: #fff; }
+        .quick-role {
+            font-size: 0.76rem;
+            border: 1px solid #E2D9CE;
+            background: #fff;
+            color: #4A2E1B;
+            border-radius: 8px;
+            padding: 6px 10px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .quick-role:hover { border-color: #BC804D; background: #F5EFEA; }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <div class="login-header">
+            <i class="fas fa-mug-hot fa-2x mb-2" style="color:#BC804D;"></i>
+            <h3 class="fw-bold mb-1">BrewSense <span class="brand-ai">AI</span></h3>
+            <p class="small mb-0 opacity-75">Café Aroma · Inteligencia Comercial y POS</p>
+        </div>
+        <div class="p-4">
+            <div id="login-alert" class="alert alert-danger py-2 small d-none" role="alert"></div>
+
+            <form id="login-form">
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold text-secondary">Correo electrónico</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white"><i class="fas fa-envelope text-muted"></i></span>
+                        <input type="email" id="email" class="form-control" placeholder="usuario@cafearoma.mx" required>
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label class="form-label small fw-semibold text-secondary">Contraseña</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white"><i class="fas fa-lock text-muted"></i></span>
+                        <input type="password" id="password" class="form-control" placeholder="••••••••" required>
+                    </div>
+                </div>
+                <button type="submit" id="btn-login" class="btn btn-caramel w-100">
+                    <i class="fas fa-right-to-bracket me-2"></i>Ingresar al Sistema
+                </button>
+            </form>
+
+            <div class="mt-4 pt-3 border-top">
+                <div class="text-muted small fw-semibold mb-2 text-center">Accesos de prueba (MariaDB):</div>
+                <div class="d-flex gap-2 justify-content-center">
+                    <button type="button" class="quick-role flex-fill" id="fill-admin">
+                        <i class="fas fa-user-shield text-warning me-1"></i>Dueño (Admin)
+                    </button>
+                    <button type="button" class="quick-role flex-fill" id="fill-emp">
+                        <i class="fas fa-cash-register text-success me-1"></i>Cajero (POS)
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById("fill-admin").onclick = () => {
+            document.getElementById("email").value = "admin@cafearoma.mx";
+            document.getElementById("password").value = "Admin123!";
+        };
+        document.getElementById("fill-emp").onclick = () => {
+            document.getElementById("email").value = "empleado@cafearoma.mx";
+            document.getElementById("password").value = "Barista123!";
+        };
+
+        document.getElementById("login-form").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const alertBox = document.getElementById("login-alert");
+            const btn = document.getElementById("btn-login");
+            alertBox.classList.add("d-none");
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Validando...';
+
+            try {
+                const res = await fetch("/api/auth/login", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        email: document.getElementById("email").value.trim(),
+                        password: document.getElementById("password").value
+                    })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || "Credenciales incorrectas");
+                window.location.href = data.redirect;
+            } catch (err) {
+                alertBox.textContent = err.message;
+                alertBox.classList.remove("d-none");
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-right-to-bracket me-2"></i>Ingresar al Sistema';
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Caja POS con IA — BrewSense AI</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --coffee: #4A2E1B;
+            --coffee-dark: #2C1A10;
+            --caramel: #BC804D;
+            --cream: #FAF7F2;
+        }
+        body { font-family: 'Inter', sans-serif; background: var(--cream); color: var(--coffee-dark); }
+        .pos-navbar { background: var(--coffee); color: #fff; }
+        .brand-ai { color: var(--caramel); }
+        .btn-caramel { background: var(--caramel); color: #fff; border: none; font-weight: 600; border-radius: 10px; }
+        .btn-caramel:hover { background: #A36B3B; color: #fff; }
+        .product-tile {
+            background: #fff; border: 1px solid #EAE3DA; border-radius: 14px;
+            padding: 12px; cursor: pointer; transition: all 0.15s; height: 100%;
+        }
+        .product-tile:hover { border-color: var(--caramel); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(74,46,27,0.08); }
+        .ai-rec-card {
+            background: linear-gradient(135deg, #FFFDF9 0%, #F7EFE5 100%);
+            border: 1.5px solid var(--caramel); border-radius: 14px; padding: 12px;
+        }
+        .cat-pill {
+            border: 1px solid #DFD6CA; background: #fff; color: var(--coffee);
+            border-radius: 20px; padding: 5px 14px; font-size: 0.82rem; font-weight: 600; cursor: pointer;
+        }
+        .cat-pill.active { background: var(--coffee); color: #fff; border-color: var(--coffee); }
+        .order-panel { background: #fff; border-radius: 16px; border: 1px solid #EAE3DA; }
+    </style>
+</head>
+<body>
+
+<nav class="pos-navbar px-4 py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div class="d-flex align-items-center gap-3">
+        <span class="fs-5 fw-bold"><i class="fas fa-mug-hot me-2" style="color:var(--caramel)"></i>BrewSense <span class="brand-ai">POS</span></span>
+        <span class="badge bg-light text-dark fw-semibold" id="pos-user-badge">Cargando...</span>
+    </div>
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+        <select id="pos-sucursal" class="form-select form-select-sm w-auto">
+            <option value="Quintana Roo">Quintana Roo</option>
+            <option value="Jalisco">Jalisco</option>
+            <option value="Nuevo León">Nuevo León</option>
+        </select>
+        <select id="pos-turno" class="form-select form-select-sm w-auto">
+            <option value="morning">Mañana</option>
+            <option value="afternoon">Tarde</option>
+            <option value="night">Noche</option>
+        </select>
+        <button class="btn btn-sm btn-outline-light" id="btn-customer-screen">
+            <i class="fas fa-tv me-1"></i>Pantalla Cliente
+        </button>
+        <a href="/" id="btn-go-admin" class="btn btn-sm btn-warning fw-semibold d-none">
+            <i class="fas fa-chart-pie me-1"></i>Panel Admin
+        </a>
+        <button class="btn btn-sm btn-danger" id="btn-logout">
+            <i class="fas fa-right-from-bracket me-1"></i>Salir
+        </button>
+    </div>
+</nav>
+
+<div class="container-fluid p-4">
+    <div class="row g-4">
+        <!-- COLUMNA IZQUIERDA: CATÁLOGO DE PRODUCTOS -->
+        <div class="col-lg-7">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                <div class="d-flex gap-2 flex-wrap" id="category-tabs">
+                    <button class="cat-pill active" data-cat="all">Todos</button>
+                    <button class="cat-pill" data-cat="Café y Bebidas">Café y Bebidas</button>
+                    <button class="cat-pill" data-cat="Panadería">Panadería</button>
+                    <button class="cat-pill" data-cat="Té e Infusiones">Té e Infusiones</button>
+                    <button class="cat-pill" data-cat="Chocolate">Chocolate</button>
+                </div>
+                <input type="text" id="pos-search" class="form-control form-control-sm" style="max-width:220px" placeholder="Buscar producto...">
+            </div>
+
+            <div class="row g-2" id="products-grid" style="max-height: 62vh; overflow-y: auto;"></div>
+
+            <!-- Ventas recientes registradas hoy en MariaDB -->
+            <div class="order-panel p-3 mt-4">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="fw-bold m-0"><i class="fas fa-clock-rotate-left text-muted me-2"></i>Últimas ventas POS guardadas en MariaDB</h6>
+                    <span class="badge bg-success-subtle text-success">Sincronizado</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle small mb-0">
+                        <thead>
+                            <tr><th>TICKET</th><th>HORA</th><th>SUCURSAL</th><th>ARTÍCULOS</th><th>COMBO IA</th><th class="text-end">TOTAL</th></tr>
+                        </thead>
+                        <tbody id="recent-pos-tbody">
+                            <tr><td colspan="6" class="text-center text-muted py-2">Aún no hay ventas POS registradas.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- COLUMNA DERECHA: CARRITO + RECOMENDACIONES IA EN VIVO -->
+        <div class="col-lg-5">
+            <div class="order-panel p-4 mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold m-0"><i class="fas fa-basket-shopping me-2" style="color:var(--caramel)"></i>Pedido Actual</h5>
+                    <button class="btn btn-sm btn-outline-secondary" id="btn-clear-cart">Limpiar</button>
+                </div>
+
+                <div id="cart-items" class="mb-3" style="min-height: 120px; max-height: 230px; overflow-y: auto;">
+                    <p class="text-muted small text-center py-4 mb-0">Selecciona productos del catálogo para iniciar un pedido.</p>
+                </div>
+
+                <div class="border-top pt-3 d-flex justify-content-between align-items-center mb-3">
+                    <span class="fw-semibold text-muted">TOTAL A COBRAR</span>
+                    <span class="fs-3 fw-bold" id="cart-total">$0.00 MXN</span>
+                </div>
+
+                <button class="btn btn-caramel w-100 py-2 fs-6" id="btn-checkout" disabled>
+                    <i class="fas fa-check-circle me-2"></i>Cobrar y Guardar en MariaDB
+                </button>
+            </div>
+
+            <!-- MOTOR DE RECOMENDACIÓN IA EN VIVO -->
+            <div class="order-panel p-4">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="fw-bold m-0"><i class="fas fa-wand-magic-sparkles me-2" style="color:var(--caramel)"></i>Sugerencias de Combos IA (En Vivo)</h6>
+                    <span class="badge bg-warning-subtle text-dark">FP-Growth</span>
+                </div>
+                <p class="text-muted small mb-3">Al agregar un producto ancla, BrewSense AI consulta MariaDB y sugiere el combo con mayor probabilidad de aceptación.</p>
+                <div id="ai-recommendations" class="d-flex flex-column gap-2">
+                    <div class="text-muted small text-center py-3 border rounded-3 bg-light">
+                        Agrega una bebida o panadería al pedido para activar el motor de sugerencias.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: PANTALLA DEL CLIENTE (EFECTO ANCLAJE DE PRECIOS) -->
+<div class="modal fade" id="customerModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0" style="border-radius:18px; overflow:hidden;">
+            <div class="p-4 text-white" style="background: var(--coffee);">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 class="fw-bold mb-0"><i class="fas fa-mug-hot me-2" style="color:var(--caramel)"></i>Café Aroma · Tu Pedido</h4>
+                        <small class="opacity-75">Pantalla de mostrador para el cliente</small>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+            </div>
+            <div class="modal-body p-4" style="background: var(--cream);">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="bg-white p-3 rounded-4 border h-100">
+                            <h6 class="fw-bold mb-3">Resumen de tu orden</h6>
+                            <div id="cust-cart-list" class="small mb-3"></div>
+                            <div class="border-top pt-2 d-flex justify-content-between fw-bold fs-5">
+                                <span>Total:</span><span id="cust-total">$0.00 MXN</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="bg-white p-3 rounded-4 border h-100">
+                            <h6 class="fw-bold mb-2" style="color:var(--caramel)"><i class="fas fa-sparkles me-1"></i>¡Arma tu Combo y Ahorra!</h6>
+                            <div id="cust-recs-list" class="d-flex flex-column gap-2"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+    <div id="pos-toast" class="toast text-white border-0"><div class="toast-body fw-semibold" id="pos-toast-msg"></div></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", async () => {
+    let allProducts = [];
+    let currentCat = "all";
+    let cart = [];
+    let currentRecs = [];
+    let shownComboIds = new Set();
+    let acceptedCombos = {};
+
+    const $ = id => document.getElementById(id);
+
+    function toast(msg, color = "#198754") {
+        $("pos-toast").style.backgroundColor = color;
+        $("pos-toast-msg").textContent = msg;
+        new bootstrap.Toast($("pos-toast"), { delay: 3200 }).show();
+    }
+
+    // 1. Verificar sesión y rol
+    const meRes = await fetch("/api/auth/me");
+    if (!meRes.ok) { window.location.href = "/login"; return; }
+    const { user } = await meRes.json();
+    $("pos-user-badge").textContent = `${user.nombre} (${user.rol.toUpperCase()})`;
+    if (user.rol === "admin") {
+        $("btn-go-admin").classList.remove("d-none");
+    } else if (user.sucursal && user.sucursal !== "all") {
+        $("pos-sucursal").value = user.sucursal;
+        $("pos-sucursal").disabled = true;
+    }
+
+    const h = new Date().getHours();
+    $("pos-turno").value = h < 12 ? "morning" : (h < 18 ? "afternoon" : "night");
+
+    $("btn-logout").onclick = async () => {
+        await fetch("/api/auth/logout", { method: "POST" });
+        window.location.href = "/login";
+    };
+
+    // 2. Cargar catálogo real desde MariaDB
+    async function loadProducts() {
+        try {
+            const res = await fetch("/api/pos/products");
+            if (!res.ok) throw new Error(`HTTP ${res.status} al consultar /api/pos/products`);
+            const data = await res.json();
+            allProducts = data.products || [];
+            renderProducts();
+        } catch (err) {
+            console.error(err);
+            $("products-grid").innerHTML = `<div class="col-12"><div class="alert alert-danger small">${err.message}</div></div>`;
+        }
+    }
+
+    function renderProducts() {
+        const q = $("pos-search").value.toLowerCase().trim();
+        const list = allProducts.filter(p =>
+            (currentCat === "all" || p.categoria === currentCat) &&
+            p.nombre.toLowerCase().includes(q)
+        );
+        if (!list.length) {
+            $("products-grid").innerHTML = '<div class="col-12 text-muted small text-center py-4">No se encontraron productos.</div>';
+            return;
+        }
+        $("products-grid").innerHTML = list.map(p => `
+            <div class="col-sm-6 col-md-4">
+                <div class="product-tile" data-id="${p.id}">
+                    <div class="small text-muted">${p.categoria}</div>
+                    <div class="fw-bold small mb-1">${p.nombre}</div>
+                    <div class="fw-bold" style="color:var(--caramel)">$${Number(p.precio_venta).toFixed(2)} MXN</div>
+                </div>
+            </div>
+        `).join("");
+
+        document.querySelectorAll(".product-tile").forEach(el => {
+            el.onclick = () => addProduct(parseInt(el.dataset.id, 10));
+        });
+    }
+
+    document.querySelectorAll(".cat-pill").forEach(btn => {
+        btn.onclick = () => {
+            document.querySelectorAll(".cat-pill").forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            currentCat = btn.dataset.cat;
+            renderProducts();
+        };
+    });
+    $("pos-search").addEventListener("input", renderProducts);
+
+    // 3. Carrito + Validación automática de combos + Consulta en vivo
+    function reconcileCartCombos() {
+        const qtyByProd = {};
+        cart.forEach(item => {
+            qtyByProd[item.producto_id] = (qtyByProd[item.producto_id] || 0) + item.cantidad;
+        });
+
+        const usedAnchors = {};
+        const nextCart = [];
+        const reverted = [];
+
+        cart.forEach(item => {
+            if (item.combo_id && item.anchor_product_id) {
+                const anchorId = item.anchor_product_id;
+                const available = Math.max((qtyByProd[anchorId] || 0) - (usedAnchors[anchorId] || 0), 0);
+                const validComboQty = Math.min(item.cantidad, available);
+                const revertQty = item.cantidad - validComboQty;
+
+                if (validComboQty > 0) {
+                    usedAnchors[anchorId] = (usedAnchors[anchorId] || 0) + validComboQty;
+                    nextCart.push({ ...item, cantidad: validComboQty });
+                }
+
+                if (revertQty > 0) {
+                    const prod = allProducts.find(p => p.id === item.producto_id);
+                    const regularPrice = prod ? Number(prod.precio_venta) : Number(item.precio_regular);
+                    nextCart.push({
+                        producto_id: item.producto_id,
+                        nombre: item.nombre,
+                        cantidad: revertQty,
+                        precio_unitario: regularPrice,
+                        precio_regular: regularPrice,
+                        combo_id: null,
+                        anchor_product_id: null
+                    });
+                    reverted.push(`${item.nombre} ($${regularPrice.toFixed(2)})`);
+                }
+            } else {
+                nextCart.push(item);
+            }
+        });
+
+        const merged = [];
+        nextCart.forEach(item => {
+            const existing = merged.find(
+                m => m.producto_id === item.producto_id &&
+                     m.combo_id === item.combo_id &&
+                     m.anchor_product_id === item.anchor_product_id
+            );
+            if (existing) {
+                existing.cantidad += item.cantidad;
+            } else {
+                merged.push({ ...item });
+            }
+        });
+
+        cart = merged;
+
+        acceptedCombos = {};
+        cart.forEach(item => {
+            if (item.combo_id) {
+                acceptedCombos[item.combo_id] =
+                    (acceptedCombos[item.combo_id] || 0) + (item.precio_unitario * item.cantidad);
+            }
+        });
+
+        if (reverted.length > 0) {
+            toast(`Sin producto ancla: ${reverted.join(", ")} volvió a su precio regular`, "#fd7e14");
+        }
+    }
+
+    function addProduct(prodId, customPrice = null, comboId = null, anchorProdId = null) {
+        const prod = allProducts.find(p => p.id === prodId);
+        if (!prod) return;
+        const regularPrice = Number(prod.precio_venta);
+        const unitPrice = customPrice !== null ? Number(customPrice) : regularPrice;
+        const existing = cart.find(
+            i => i.producto_id === prodId &&
+                 i.combo_id === comboId &&
+                 i.anchor_product_id === anchorProdId
+        );
+        if (existing) {
+            existing.cantidad += 1;
+        } else {
+            cart.push({
+                producto_id: prod.id,
+                nombre: prod.nombre,
+                cantidad: 1,
+                precio_unitario: unitPrice,
+                precio_regular: regularPrice,
+                combo_id: comboId,
+                anchor_product_id: anchorProdId
+            });
+        }
+        reconcileCartCombos();
+        renderCart();
+        fetchRecommendations();
+    }
+
+    function renderCart() {
+        if (!cart.length) {
+            $("cart-items").innerHTML = '<p class="text-muted small text-center py-4 mb-0">Selecciona productos del catálogo para iniciar un pedido.</p>';
+            $("cart-total").textContent = "$0.00 MXN";
+            $("btn-checkout").disabled = true;
+            return;
+        }
+        $("btn-checkout").disabled = false;
+        let total = 0;
+        $("cart-items").innerHTML = cart.map((item, idx) => {
+            const sub = item.precio_unitario * item.cantidad;
+            total += sub;
+            return `
+                <div class="d-flex justify-content-between align-items-center py-2 border-bottom small">
+                    <div>
+                        <div class="fw-semibold">${item.nombre} ${item.combo_id ? '<span class="badge bg-success-subtle text-success">Combo IA</span>' : ''}</div>
+                        <div class="text-muted">$${item.precio_unitario.toFixed(2)} × ${item.cantidad}</div>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <strong>$${sub.toFixed(2)}</strong>
+                        <button class="btn btn-sm btn-outline-danger py-0 px-1" onclick="window._removeCart(${idx})">×</button>
+                    </div>
+                </div>
+            `;
+        }).join("");
+        $("cart-total").textContent = `$${total.toFixed(2)} MXN`;
+    }
+
+    window._removeCart = (idx) => {
+        cart.splice(idx, 1);
+        reconcileCartCombos();
+        renderCart();
+        fetchRecommendations();
+    };
+
+    $("btn-clear-cart").onclick = () => {
+        cart = [];
+        shownComboIds.clear();
+        acceptedCombos = {};
+        renderCart();
+        fetchRecommendations();
+    };
+
+    async function fetchRecommendations() {
+        const ids = [...new Set(cart.map(i => i.producto_id))];
+        if (!ids.length) {
+            currentRecs = [];
+            $("ai-recommendations").innerHTML = '<div class="text-muted small text-center py-3 border rounded-3 bg-light">Agrega una bebida o panadería al pedido para activar el motor de sugerencias.</div>';
+            return;
+        }
+
+        const res = await fetch("/api/pos/recommend", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                product_ids: ids,
+                sucursal: $("pos-sucursal").value,
+                turno: $("pos-turno").value
+            })
+        });
+        const data = await res.json();
+        currentRecs = data.recommendations || [];
+        currentRecs.forEach(r => shownComboIds.add(r.combo_id));
+
+        if (!currentRecs.length) {
+            $("ai-recommendations").innerHTML = '<div class="text-muted small text-center py-3 border rounded-3 bg-light">No hay combos pendientes para los artículos actuales.</div>';
+            return;
+        }
+
+        $("ai-recommendations").innerHTML = currentRecs.map(r => `
+            <div class="ai-rec-card">
+                <div class="d-flex justify-content-between align-items-start mb-1">
+                    <span class="fw-bold small" style="color:var(--coffee)">${r.nombre_combo}</span>
+                    <span class="badge bg-success-subtle text-success">Lift ${Number(r.lift).toFixed(1)}×</span>
+                </div>
+                <div class="small text-muted mb-2">
+                    Por llevar <strong>${r.ancla}</strong>, agrega <strong>${r.complemento}</strong> por solo
+                    <strong class="text-success">+$${Number(r.precio_complemento_combo).toFixed(2)}</strong>
+                    (Combo: <span class="text-decoration-line-through">$${Number(r.precio_separado).toFixed(2)}</span>
+                    <strong>$${Number(r.precio_combo).toFixed(2)}</strong> · Ahorras $${Number(r.ahorro_mxn).toFixed(2)})
+                </div>
+                <button class="btn btn-sm btn-caramel w-100" onclick="window._applyCombo(${r.combo_id}, ${r.producto_ancla_id}, ${r.producto_comp_id}, ${r.precio_complemento_combo})">
+                    <i class="fas fa-plus me-1"></i>Agregar ${r.complemento} en Combo
+                </button>
+            </div>
+        `).join("");
+    }
+
+    window._applyCombo = (comboId, anclaProdId, compProdId, extraPrice) => {
+        addProduct(compProdId, extraPrice, comboId, anclaProdId);
+        toast("Combo IA aplicado al pedido del cliente");
+    };
+
+    // 4. Pantalla Cliente (Efecto Anclaje)
+    $("btn-customer-screen").onclick = () => {
+        $("cust-cart-list").innerHTML = cart.length
+            ? cart.map(i => `<div class="d-flex justify-content-between py-1 border-bottom"><span>${i.cantidad}× ${i.nombre}</span><strong>$${(i.precio_unitario * i.cantidad).toFixed(2)}</strong></div>`).join("")
+            : '<p class="text-muted">Esperando productos...</p>';
+        $("cust-total").textContent = $("cart-total").textContent;
+        $("cust-recs-list").innerHTML = currentRecs.length
+            ? currentRecs.map(r => `
+                <div class="p-3 rounded-3 border" style="background:#FFFDF9; border-color:var(--caramel)!important;">
+                    <div class="fw-bold">${r.ancla} + ${r.complemento}</div>
+                    <div class="my-1">
+                        <span class="text-decoration-line-through text-muted me-2">$${Number(r.precio_separado).toFixed(2)}</span>
+                        <span class="fs-5 fw-bold text-success">$${Number(r.precio_combo).toFixed(2)} MXN</span>
+                    </div>
+                    <span class="badge bg-warning text-dark">¡Ahorra $${Number(r.ahorro_mxn).toFixed(2)} hoy!</span>
+                </div>
+            `).join("")
+            : '<p class="text-muted small">Pregunta por nuestras promociones del día.</p>';
+        new bootstrap.Modal($("customerModal")).show();
+    };
+
+    // 5. Cobrar y registrar en MariaDB
+    $("btn-checkout").onclick = async () => {
+        const btn = $("btn-checkout");
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Guardando en MariaDB...';
+
+        try {
+            const res = await fetch("/api/pos/checkout", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    items: cart,
+                    sucursal: $("pos-sucursal").value,
+                    turno: $("pos-turno").value,
+                    shown_combo_ids: Array.from(shownComboIds),
+                    accepted_combos: acceptedCombos
+                })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || "Error al cobrar");
+
+            toast(`Venta ${data.codigo_ticket} guardada ($${Number(data.total).toFixed(2)} MXN)`);
+            cart = [];
+            shownComboIds.clear();
+            acceptedCombos = {};
+            renderCart();
+            fetchRecommendations();
+            loadRecent();
+        } catch (err) {
+            toast(err.message, "#dc3545");
+        } finally {
+            btn.innerHTML = '<i class="fas fa-check-circle me-2"></i>Cobrar y Guardar en MariaDB';
+            btn.disabled = !cart.length;
+        }
+    };
+
+    async function loadRecent() {
+        try {
+            const res = await fetch("/api/pos/recent");
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+            const rows = data.tickets || [];
+            if (!rows.length) return;
+            $("recent-pos-tbody").innerHTML = rows.map(t => `
+                <tr>
+                    <td><code>${t.codigo_ticket}</code></td>
+                    <td>${t.hora}</td>
+                    <td>${t.sucursal}</td>
+                    <td class="text-truncate" style="max-width:200px">${t.productos}</td>
+                    <td>${t.uso_combo_ia > 0 ? '<span class="badge bg-success-subtle text-success">Aceptado</span>' : '<span class="badge bg-light text-muted">Normal</span>'}</td>
+                    <td class="text-end fw-bold">$${Number(t.total).toFixed(2)}</td>
+                </tr>
+            `).join("");
+        } catch (err) {
+            console.error("Error cargando ventas recientes:", err);
+        }
+    }
+
+    await loadProducts();
+    await loadRecent();
+});
+</script>
+</body>
+</html>
